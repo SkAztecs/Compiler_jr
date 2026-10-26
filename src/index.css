@@ -1,0 +1,1486 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+/* Monochrome tokens: white paper for input, black terminal for output */
+:root {
+  color-scheme: light;
+  --paper: #F3F3F3;
+  --sheet: #FFFFFF;
+  --ink: #0B0B0B;
+  --ink-2: #2E2E2E;
+  --muted: #6A6A6A;
+  --faint: #A3A3A3;
+  --rule: #D6D6D6;
+  --tint: #ECECEC;
+  --term: #0B0B0B;
+  --term-text: #E9E9E9;
+  --term-strong: #FFFFFF;
+  --term-soft: #C2C2C2;
+  --term-muted: #8A8A8A;
+  --term-thumb: #3A3A3A;
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --radius: 4px;
+  --header-h: 56px;
+
+  /* Syntax colours: the one place the editor uses colour, kept dark enough to read on white */
+  --syntax-keyword: #1F4FA8;
+  --syntax-number: #7A2E9C;
+  --syntax-string: #8A4B08;
+  --syntax-comment: #6A6A6A;
+  --syntax-operator: #4A4A4A;
+  --syntax-error: #B3261E;
+}
+
+/* Reset and Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--paper);
+  color: var(--ink);
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+textarea, pre {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Main App Container */
+.app-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+}
+
+/* Header */
+.header {
+  position: relative;
+  z-index: 10;
+  background: var(--sheet);
+  border-bottom: 1px solid var(--ink);
+}
+
+.header-content {
+  height: var(--header-h);
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* Block cursor: the same mark ends the landing-page title */
+.header-title::before {
+  content: "";
+  width: 0.55rem;
+  height: 1.05rem;
+  background: var(--ink);
+}
+
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 36px;
+  padding: 0 0.9rem;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.btn svg {
+  width: 0.9em;
+  height: 0.9em;
+  flex: none;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.btn-secondary {
+  background: var(--sheet);
+  color: var(--ink);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--sheet);
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--sheet);
+  font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--ink-2);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 1.5rem 1.5rem;
+  overflow: hidden;
+}
+
+.content-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 1024px) {
+  .content-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.editor-section,
+.console-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-height: 0;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 28px;
+}
+
+.editor-label,
+.console-header-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.panel-meta {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Code Editor: white sheet with a line-number gutter */
+.editor-frame {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background: var(--sheet);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.editor-frame:focus-within {
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
+.editor-gutter {
+  flex: none;
+  min-width: 3.25rem;
+  padding: 1rem 0.75rem 3rem 0;
+  border-right: 1px solid var(--rule);
+  background: var(--sheet);
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  user-select: none;
+}
+
+.editor-gutter span {
+  display: block;
+  cursor: pointer;
+}
+
+.editor-gutter span:hover {
+  color: var(--ink);
+}
+
+/* The line being traced through the compiler phases */
+.editor-gutter span.is-selected {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.editor-code {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.editor-line-highlight {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: var(--tint);
+  border-left: 2px solid var(--ink);
+  pointer-events: none;
+}
+
+/* The coloured copy of the code, drawn behind the textarea. It must match the
+   textarea's font, padding and line height exactly so the two line up. Only
+   colour changes between token kinds: bold or italic could change the width of
+   letters from other scripts and push the caret out of line. */
+.code-highlight {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 1rem 1.25rem;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  white-space: pre;
+  tab-size: 4;
+  pointer-events: none;
+}
+
+.code-highlight code {
+  display: block;
+  font: inherit;
+}
+
+.syntax-keyword { color: var(--syntax-keyword); }
+.syntax-literal,
+.syntax-number { color: var(--syntax-number); }
+.syntax-string { color: var(--syntax-string); }
+.syntax-comment { color: var(--syntax-comment); }
+.syntax-operator,
+.syntax-punctuation { color: var(--syntax-operator); }
+.syntax-identifier { color: var(--ink); }
+
+/* Characters the language doesn't have, and text that never closes */
+.syntax-error {
+  color: var(--syntax-error);
+  text-decoration: underline wavy var(--syntax-error);
+  text-underline-offset: 3px;
+}
+
+.code-input {
+  position: relative; /* paint above the line highlight and the coloured layer */
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+  padding: 1rem 1.25rem;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: transparent; /* the coloured layer behind shows the text */
+  caret-color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  white-space: pre;
+  overflow: auto;
+  tab-size: 4;
+}
+
+.code-input:focus-visible {
+  outline: none;
+}
+
+/* A see-through selection, so the coloured text stays readable under it */
+.code-input::selection {
+  background: rgba(11, 11, 11, 0.16);
+  color: transparent;
+}
+
+/* Hidden copy used to measure where a word starts, for placing suggestions */
+.code-measure {
+  position: absolute;
+  visibility: hidden;
+  white-space: pre;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  tab-size: 4;
+}
+
+/* Keyword suggestions */
+.completion-popup {
+  position: absolute;
+  z-index: 3;
+  min-width: 12rem;
+  max-width: 20rem;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--sheet);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.completion-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  height: 30px;
+  padding: 0 0.6rem;
+  line-height: 30px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.completion-item.is-active {
+  background: var(--ink);
+  color: var(--sheet);
+}
+
+.completion-label {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+
+.completion-detail {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  opacity: 0.65;
+  white-space: nowrap;
+}
+
+/* Console: the inverted, black terminal sheet */
+.console-header {
+  margin: 0;
+}
+
+/* Tabs for the program output and each compiler phase */
+.console-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.console-tab {
+  height: 28px;
+  padding: 0 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.console-tab:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.console-tab.is-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--sheet);
+}
+
+.btn-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 28px;
+  padding: 0 0.65rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-clear:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--sheet);
+}
+
+.console-output {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  padding: 1rem 1.25rem;
+  background: var(--term);
+  color: var(--term-text);
+  border: 1px solid var(--term);
+  border-radius: var(--radius);
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Console output: hierarchy through weight and inversion, not colour */
+.output-header {
+  color: var(--term-muted);
+}
+
+.output-error {
+  display: inline-block;
+  padding: 0 0.45em;
+  background: var(--term-strong);
+  color: var(--term);
+  font-weight: 700;
+}
+
+/* Code frame under an error */
+.output-frame {
+  color: var(--term-muted);
+}
+
+.output-frame--current {
+  color: var(--term-strong);
+}
+
+.output-caret {
+  color: var(--term-muted);
+}
+
+/* Same text as the line above, hidden, so the marker starts exactly under the mistake */
+.output-caret-pad {
+  visibility: hidden;
+}
+
+/* The marker: a bar exactly as wide as the marked code */
+.output-caret-mark {
+  color: transparent;
+  border-top: 3px solid var(--term-strong);
+}
+
+.output-number {
+  color: var(--term-strong);
+  font-weight: 600;
+}
+
+.output-string {
+  color: var(--term-soft);
+  font-style: italic;
+}
+
+.output-boolean {
+  color: var(--term-strong);
+  font-weight: 600;
+  font-style: italic;
+}
+
+.output-json,
+.output-text {
+  color: var(--term-text);
+}
+
+.output-empty {
+  color: var(--term-muted);
+  font-style: italic;
+}
+
+/* Phase explorer: one row per token / instruction, linked to a source line */
+.phase-row {
+  display: block;
+  min-height: 1lh;
+  margin: 0 -0.5rem;
+  padding: 0 0.5rem;
+  border-left: 2px solid transparent;
+}
+
+.phase-row--header {
+  color: var(--term-muted);
+}
+
+.phase-row--note {
+  color: var(--term-soft);
+}
+
+.phase-row--label {
+  color: var(--term-strong);
+  font-weight: 600;
+}
+
+.phase-row--source {
+  color: var(--term-strong);
+  font-weight: 600;
+}
+
+.phase-row.is-clickable {
+  cursor: pointer;
+}
+
+.phase-row.is-clickable:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.phase-row.is-traced,
+.ast-row.is-traced {
+  background: rgba(255, 255, 255, 0.14);
+  border-left-color: var(--term-strong);
+  color: var(--term-strong);
+}
+
+/* Nested tree rows would stack their borders, so the tree uses the background alone */
+.ast-row.is-traced {
+  border-left-color: transparent;
+}
+
+.phase-stale {
+  display: block;
+  margin-bottom: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--term-muted);
+  color: var(--term-strong);
+}
+
+/* Target language switch (C / Python / JavaScript), inside the dark console */
+.target-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  white-space: normal;
+}
+
+.target-switch {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.target-button {
+  height: 26px;
+  padding: 0 0.65rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--term-soft);
+  background: transparent;
+  border: 1px solid var(--term-thumb);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.target-button:hover {
+  color: var(--term-strong);
+  border-color: var(--term-muted);
+}
+
+.target-button.is-active {
+  color: var(--term);
+  background: var(--term-strong);
+  border-color: var(--term-strong);
+}
+
+/* AI tutor box, at the top of the Output and Trace views */
+.tutor {
+  margin-bottom: 1rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--term-thumb);
+  border-radius: var(--radius);
+  white-space: normal;
+}
+
+.tutor-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.tutor-language {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--term-muted);
+  font-size: 0.8rem;
+}
+
+.tutor-code-input {
+  width: 9rem;
+  height: 26px;
+  padding: 0 0.4rem;
+  font: inherit;
+  color: var(--term-text);
+  background: var(--term);
+  border: 1px solid var(--term-thumb);
+  border-radius: var(--radius);
+}
+
+.tutor-language select {
+  height: 26px;
+  font: inherit;
+  color: var(--term-text);
+  background: var(--term);
+  border: 1px solid var(--term-thumb);
+  border-radius: var(--radius);
+}
+
+/* Code inside an answer */
+.tutor-code {
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.65rem;
+  background: var(--term);
+  border: 1px solid var(--term-thumb);
+  border-radius: var(--radius);
+  color: var(--term-text);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* The compiler's check of code the AI suggested */
+.tutor-check {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.85rem;
+}
+
+.tutor-check.is-good {
+  border: 1px solid var(--term-strong);
+  color: var(--term-strong);
+}
+
+.tutor-check.is-bad {
+  background: var(--term-strong);
+  color: var(--term);
+  font-weight: 600;
+}
+
+.tutor-answer {
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.65rem;
+  border-left: 2px solid var(--term-strong);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--term-strong);
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.tutor-note {
+  margin-top: 0.5rem;
+  color: var(--term-muted);
+  font-size: 0.8rem;
+}
+
+.tutor-note code {
+  color: var(--term-soft);
+}
+
+.tutor-error {
+  margin-top: 0.5rem;
+  color: var(--term);
+  background: var(--term-strong);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* Step-through debugger, inside the dark console */
+.debugger {
+  white-space: normal;
+}
+
+.debug-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.target-button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.debug-timeline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0 0.5rem;
+  color: var(--term-muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.debug-timeline input {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--term-strong);
+}
+
+.debug-note {
+  color: var(--term-muted);
+  font-size: 0.8rem;
+}
+
+.debug-status {
+  min-height: 2.6em;
+  margin: 0.25rem 0 0.75rem;
+  padding: 0.4rem 0.6rem;
+  border-left: 2px solid var(--term-strong);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--term-strong);
+}
+
+.debug-status.is-error {
+  background: var(--term-strong);
+  color: var(--term);
+  font-weight: 700;
+}
+
+.debug-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 1280px) {
+  .debug-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.debug-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.debug-panel {
+  min-width: 0;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--term-thumb);
+  border-radius: var(--radius);
+}
+
+.debug-heading {
+  margin-bottom: 0.35rem;
+  color: var(--term-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.debug-heading span {
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 400;
+}
+
+.debug-listing {
+  max-height: 22rem;
+  overflow: auto;
+}
+
+.debug-instruction {
+  padding: 0 0.35rem;
+  white-space: pre;
+  color: var(--term-soft);
+  border-left: 2px solid transparent;
+  cursor: pointer;
+}
+
+.debug-instruction:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* The instruction about to run */
+.debug-instruction.is-current {
+  background: rgba(255, 255, 255, 0.16);
+  border-left-color: var(--term-strong);
+  color: var(--term-strong);
+}
+
+.debug-stack-item {
+  padding: 0 0.35rem;
+  border-bottom: 1px solid var(--term-thumb);
+  color: var(--term-soft);
+}
+
+.debug-stack-item.is-top {
+  color: var(--term-strong);
+  font-weight: 700;
+}
+
+.debug-slot {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 0.35rem;
+  white-space: pre;
+  color: var(--term-text);
+}
+
+/* Temporaries the compiler made up, as opposed to the program's own variables */
+.debug-slot.is-temp {
+  color: var(--term-muted);
+}
+
+.debug-slot.is-changed {
+  background: var(--term-strong);
+  color: var(--term);
+}
+
+.debug-empty {
+  color: var(--term-muted);
+  font-style: italic;
+}
+
+/* Syntax tree */
+.ast-tree,
+.ast-children {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ast-children {
+  margin-left: 0.55rem;
+  padding-left: 0.9rem;
+  border-left: 1px solid var(--term-thumb);
+}
+
+.ast-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin: 0 -0.5rem;
+  padding: 0 0.5rem;
+  border-left: 2px solid transparent;
+}
+
+.ast-toggle {
+  flex: none;
+  width: 1rem;
+  padding: 0;
+  font: inherit;
+  color: var(--term-muted);
+  background: none;
+  border: 0;
+  text-align: center;
+}
+
+button.ast-toggle {
+  cursor: pointer;
+}
+
+button.ast-toggle:hover {
+  color: var(--term-strong);
+}
+
+.ast-label {
+  cursor: pointer;
+}
+
+.ast-label:hover {
+  text-decoration: underline;
+}
+
+.ast-edge {
+  color: var(--term-muted);
+}
+
+.ast-line {
+  color: var(--term-muted);
+  font-size: 0.85em;
+}
+
+/* Scrollbars */
+.code-input::-webkit-scrollbar,
+.console-output::-webkit-scrollbar,
+.modal-body::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.code-input::-webkit-scrollbar-track,
+.console-output::-webkit-scrollbar-track,
+.modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.code-input::-webkit-scrollbar-thumb,
+.modal-body::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border: 3px solid var(--sheet);
+  border-radius: 10px;
+}
+
+.console-output::-webkit-scrollbar-thumb {
+  background: var(--term-thumb);
+  border: 3px solid var(--term);
+  border-radius: 10px;
+}
+
+.code-input::-webkit-scrollbar-corner,
+.console-output::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Modals */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(11, 11, 11, 0.55);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.modal-open .modal-backdrop {
+  opacity: 1;
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 700px;
+  max-height: 85vh;
+  background: var(--sheet);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: 6px 6px 0 var(--ink);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.modal-open .modal-content {
+  opacity: 1;
+  transform: none;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--ink);
+}
+
+.modal-title {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.btn-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--ink);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.btn-close:hover {
+  border-color: var(--ink);
+}
+
+.modal-body {
+  padding: 1.25rem 1.5rem 1.5rem;
+  overflow-y: auto;
+  color: var(--ink-2);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.modal-body h3 {
+  margin: 1.5rem 0 0.6rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.modal-body h3:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.modal-body p {
+  max-width: 68ch;
+  margin-bottom: 0.75rem;
+}
+
+.modal-body ul {
+  margin: 0 0 0.75rem 1.1rem;
+}
+
+.modal-body li {
+  margin-bottom: 0.25rem;
+}
+
+.modal-body code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  padding: 0.05em 0.35em;
+  background: var(--tint);
+  border-radius: 3px;
+  color: var(--ink);
+}
+
+.modal-body pre {
+  margin: 0.5rem 0 1rem;
+}
+
+.modal-body pre code {
+  display: block;
+  padding: 0.85rem 1rem;
+  background: var(--term);
+  color: var(--term-text);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.modal-body b,
+.modal-body strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.help-note {
+  margin: 0.5rem 0;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--ink);
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+/* Syntax guide: examples look like the editor, with the same colours */
+.guide-example {
+  position: relative;
+  margin: 0.5rem 0 1.25rem;
+}
+
+.guide-example pre {
+  margin: 0;
+}
+
+.modal-body .guide-example pre code {
+  padding: 0.85rem 5.5rem 0.85rem 1rem;
+  background: var(--sheet);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+}
+
+.guide-try {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  height: 26px;
+  padding: 0 0.65rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--sheet);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.guide-try:hover {
+  background: var(--ink);
+  color: var(--sheet);
+}
+
+.guide-table {
+  width: 100%;
+  margin: 0.5rem 0 1rem;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.guide-table th,
+.guide-table td {
+  padding: 0.35rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+}
+
+.guide-table th {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Settings Modal */
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.25rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 640px) {
+  .settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.setting-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.setting-input-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.setting-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.setting-input:hover {
+  border-color: var(--muted);
+}
+
+.setting-input:focus {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
+/* Language packs */
+.pack-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .pack-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.pack-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  color: var(--ink);
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.pack-button:hover {
+  border-color: var(--ink);
+}
+
+.pack-button.is-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--sheet);
+}
+
+.pack-name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.pack-english {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.pack-convert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.85rem 0 0.25rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.pack-convert input {
+  accent-color: var(--ink);
+}
+
+.help-modal {
+  max-width: 56rem;
+}
+
+.settings-modal {
+  max-width: 40rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .header-content {
+    padding: 0 1rem;
+  }
+
+  .main-content {
+    padding: 1rem;
+  }
+}
+
+.btn-label-short {
+  display: none;
+}
+
+/* Phones: the page scrolls instead of squeezing the editor and console into one
+   screen, the header stays on top so Run is always in reach, and the tabs are one
+   row that scrolls sideways. */
+@media (max-width: 640px) {
+  body {
+    height: auto;
+    overflow: visible;
+  }
+
+  .app-container {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .header {
+    position: sticky;
+    top: 0;
+  }
+
+  .header-content {
+    padding: 0 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .header-content > div:first-child {
+    min-width: 0;
+  }
+
+  .header-title {
+    font-size: 0.95rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header-buttons {
+    gap: 0.4rem;
+    flex: none;
+  }
+
+  .btn-label-long {
+    display: none;
+  }
+
+  .btn-label-short {
+    display: inline;
+  }
+
+  .main-content {
+    overflow: visible;
+    padding: 0.75rem;
+  }
+
+  .content-grid {
+    grid-template-rows: auto auto;
+    gap: 1rem;
+  }
+
+  .editor-section {
+    height: 55vh;
+    height: 55dvh;
+    min-height: 300px;
+  }
+
+  .console-section {
+    height: 85vh;
+    height: 85dvh;
+    min-height: 460px;
+  }
+
+  .console-tabs {
+    flex: 1;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .console-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .console-tab,
+  .btn-clear {
+    flex: none;
+  }
+
+  .console-output {
+    padding: 0.75rem;
+  }
+
+  .modal-backdrop {
+    padding: 0.75rem;
+  }
+
+  .modal-content {
+    max-height: 90vh;
+    max-height: 90dvh;
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+
+  /* Icon-only secondary buttons; the text stays as the accessible name */
+  .btn-secondary {
+    font-size: 0;
+    padding: 0 0.7rem;
+  }
+
+  .btn-secondary svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
